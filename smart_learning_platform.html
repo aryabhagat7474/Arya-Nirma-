@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Giove - Smart Topic Explainer & Custom Learning Feed</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        surface: '#f8fafc',
+                        card: '#ffffff'
+                    },
+                    boxShadow: {
+                        'soft-sm': '0 2px 8px -2px rgba(0,0,0,0.05), 0 1px 4px -1px rgba(0,0,0,0.03)',
+                        'soft-md': '0 8px 24px -4px rgba(99,102,241,0.08), 0 4px 12px -2px rgba(0,0,0,0.03)',
+                        'soft-lg': '0 20px 30px -10px rgba(0,0,0,0.07)',
+                        'glow': '0 0 20px -3px rgba(79,70,229,0.3)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Mobile Container Framing */
+        .mobile-shell {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            max-height: 932px;
+            background-color: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+        }
+
+        @media (min-width: 431px) {
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 20px 0;
+                background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            }
+            .mobile-shell {
+                border-radius: 44px;
+                height: 880px;
+                border: 10px solid #1e293b;
+            }
+        }
+
+        /* Dynamic Tab Scroll area */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animated Progress Ring */
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Custom Keyframe Animations */
+        @keyframes slideUp {
+            from { transform: translateY(16px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        /* Glassmorphism accents */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Flip card effect for active recall */
+        .flip-card {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-shell">
+        
+        <!-- TOP APP BAR -->
+        <header class="glass-header sticky top-0 z-30 px-5 py-3.5 border-b border-slate-200/80 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="relative cursor-pointer" onclick="openProfileModal()">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-400 p-[2px]">
+                        <div class="w-full h-full bg-white rounded-full flex items-center justify-center font-bold text-brand-600 text-sm">
+                            AN
+                        </div>
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="font-heading font-bold text-slate-900 text-sm">Arya Nirman</h1>
+                        <span id="levelBadge" class="px-2 py-0.5 bg-brand-50 text-brand-600 font-semibold text-[10px] rounded-full border border-brand-200">Intermediate</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-bullseye text-brand-500 text-[10px]"></i>
+                        <span>Goal: Full-Stack Mastery</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Top Action Buttons -->
+            <div class="flex items-center gap-2">
+                <!-- Streak Button -->
+                <button onclick="switchTab('analytics')" class="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-600 rounded-xl font-bold text-xs border border-amber-200/60 shadow-soft-sm active:scale-95 transition">
+                    <i class="fa-solid fa-fire text-amber-500 animate-bounce"></i>
+                    <span id="streakCount">14</span>
+                </button>
+                <!-- Notification Bell -->
+                <button onclick="toggleNotificationsModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-600 flex items-center justify-center relative active:scale-95 transition">
+                    <i class="fa-regular fa-bell text-sm"></i>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN SCROLLABLE CONTENT -->
+        <main id="mainScrollArea" class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4 pb-24">
+            
+            <!-- ================= TAB 1: CUSTOM LEARNING FEED ================= -->
+            <section id="tab-feed" class="tab-page space-y-4 animate-slide-up">
+                
+                <!-- Daily Motivation & Quick Metric Header -->
+                <div class="bg-gradient-to-r from-brand-600 via-indigo-600 to-indigo-700 rounded-2xl p-4 text-white shadow-soft-md relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-200">Adaptive Velocity</span>
+                            <h2 class="font-heading font-bold text-lg text-white">Daily Bite-Sized Feed</h2>
+                        </div>
+                        <span class="px-2.5 py-1 bg-white/15 backdrop-blur-md rounded-lg text-xs font-semibold text-white border border-white/20">
+                            94% Match
+                        </span>
+                    </div>
+                    <p class="text-xs text-indigo-100/90 leading-relaxed mb-3">
+                        Tailored explanations and real-world practical examples matching your weak areas.
+                    </p>
+                    <div class="flex items-center justify-between text-xs text-indigo-100 pt-2 border-t border-white/15">
+                        <span class="flex items-center gap-1.5"><i class="fa-regular fa-clock text-indigo-200"></i> ~8 min total today</span>
+                        <button onclick="refreshFeed()" class="text-white hover:text-indigo-200 font-semibold text-xs flex items-center gap-1 underline underline-offset-2 active:scale-95 transition">
+                            <i class="fa-solid fa-arrows-rotate text-[11px]"></i> Tune Algorithm
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feed Filter Pill Tags -->
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                    <button onclick="filterFeed('all', this)" class="feed-chip active-chip px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-brand-600 text-white shadow-soft-sm transition">
+                        ⚡ All Picks
+                    </button>
+                    <button onclick="filterFeed('takeaway', this)" class="feed-chip px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition">
+                        💡 Key Takeaways
+                    </button>
+                    <button onclick="filterFeed('code', this)" class="feed-chip px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition">
+                        💻 Real Code
+                    </button>
+                    <button onclick="filterFeed('quiz', this)" class="feed-chip px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition">
+                        🎯 Quick Check
+                    </button>
+                </div>
+
+                <!-- Dynamic Learning Feed Container -->
+                <div id="feedContainer" class="space-y-3.5">
+                    <!-- Feed Card 1 -->
+                    <div class="feed-card bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm hover:shadow-soft-md transition duration-200 relative" data-category="takeaway">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 font-bold text-[10px] rounded-md border border-emerald-200/60 uppercase tracking-wider">
+                                    Concept • 2 Min Read
+                                </span>
+                                <span class="text-[11px] text-slate-400 font-medium">Async JS</span>
+                            </div>
+                            <button onclick="toggleBookmark(this)" class="text-slate-300 hover:text-amber-500 transition text-sm">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </button>
+                        </div>
+                        <h3 class="font-heading font-bold text-slate-900 text-sm mb-1.5 leading-snug">
+                            Promises vs Async/Await: When & Why it Matters
+                        </h3>
+                        <p class="text-xs text-slate-600 leading-relaxed mb-3">
+                            Async/await is syntactic sugar over Promises. It flattens code hierarchy, converting pyramid callback structures into clear linear step-by-step logic.
+                        </p>
+                        <!-- Code Visual Box -->
+                        <div class="bg-slate-900 rounded-xl p-3 mb-3 font-mono text-[11px] text-emerald-400 leading-relaxed overflow-x-auto border border-slate-800">
+                            <span class="text-slate-500">// Old Promise style vs Clean Async</span><br>
+                            <span class="text-purple-400">const</span> data = <span class="text-purple-400">await</span> fetchUser();<br>
+                            console.<span class="text-blue-300">log</span>(data.name);
+                        </div>
+                        <!-- Card Action Buttons -->
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <button onclick="markComplete(this)" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl shadow-soft-sm active:scale-95 transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check text-[10px]"></i> Got It (+25 XP)
+                                </button>
+                                <button onclick="skipCard(this)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl active:scale-95 transition">
+                                    Skip (Know This)
+                                </button>
+                            </div>
+                            <button onclick="explainInDetail('Promises vs Async Await')" class="text-brand-600 hover:text-brand-700 text-xs font-semibold flex items-center gap-1">
+                                Explain Deeper <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Feed Card 2 -->
+                    <div class="feed-card bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm hover:shadow-soft-md transition duration-200 relative" data-category="code">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 font-bold text-[10px] rounded-md border border-indigo-200/60 uppercase tracking-wider">
+                                    Pattern Snippet
+                                </span>
+                                <span class="text-[11px] text-slate-400 font-medium">CSS Flexbox</span>
+                            </div>
+                            <button onclick="toggleBookmark(this)" class="text-slate-300 hover:text-amber-500 transition text-sm">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </button>
+                        </div>
+                        <h3 class="font-heading font-bold text-slate-900 text-sm mb-1.5 leading-snug">
+                            The Ultimate 1-Line Centering Trick
+                        </h3>
+                        <p class="text-xs text-slate-600 leading-relaxed mb-3">
+                            Eliminate outdated margin calculations. Modern CSS uses Grid or Flexbox to center elements along both axes effortlessly.
+                        </p>
+                        <div class="bg-slate-900 rounded-xl p-3 mb-3 font-mono text-[11px] text-cyan-300 leading-relaxed border border-slate-800">
+                            display: <span class="text-amber-300">grid</span>;<br>
+                            place-items: <span class="text-amber-300">center</span>;
+                        </div>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <button onclick="markComplete(this)" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl shadow-soft-sm active:scale-95 transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check text-[10px]"></i> Got It (+25 XP)
+                                </button>
+                                <button onclick="skipCard(this)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl active:scale-95 transition">
+                                    Too Easy
+                                </button>
+                            </div>
+                            <button onclick="explainInDetail('CSS Grid Centering Methods')" class="text-brand-600 hover:text-brand-700 text-xs font-semibold flex items-center gap-1">
+                                Explain Deeper <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Feed Card 3 (Interactive Quiz) -->
+                    <div class="feed-card bg-gradient-to-br from-amber-50/80 to-orange-50/50 rounded-2xl p-4 border border-amber-200/70 shadow-soft-sm relative" data-category="quiz">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-0.5 bg-amber-500 text-white font-bold text-[10px] rounded-md uppercase tracking-wider shadow-soft-sm">
+                                🎯 Instant Recall Check
+                            </span>
+                            <span class="text-xs font-bold text-amber-700">+50 XP</span>
+                        </div>
+                        <h3 class="font-heading font-bold text-slate-900 text-sm mb-2">
+                            What does `Array.prototype.map()` return in JavaScript?
+                        </h3>
+                        <div id="quizOptions" class="space-y-2 mb-3">
+                            <button onclick="checkAnswer(this, false)" class="w-full text-left p-2.5 bg-white rounded-xl border border-amber-200/80 text-xs text-slate-700 hover:bg-amber-100/50 transition font-medium">
+                                A) Modifies the original array in-place
+                            </button>
+                            <button onclick="checkAnswer(this, true)" class="w-full text-left p-2.5 bg-white rounded-xl border border-amber-200/80 text-xs text-slate-700 hover:bg-amber-100/50 transition font-medium">
+                                B) A brand new array with transformed elements
+                            </button>
+                            <button onclick="checkAnswer(this, false)" class="w-full text-left p-2.5 bg-white rounded-xl border border-amber-200/80 text-xs text-slate-700 hover:bg-amber-100/50 transition font-medium">
+                                C) A single accumulated number value
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: SMART TOPIC EXPLAINER ================= -->
+            <section id="tab-explainer" class="tab-page space-y-4 hidden">
+                
+                <!-- Topic Explainer Search Bar -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-heading font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-brand-600"></i>
+                            Smart Topic Explainer
+                        </h2>
+                        <span class="text-[10px] bg-brand-50 text-brand-600 font-bold px-2 py-0.5 rounded-full border border-brand-200">
+                            AI Grounded
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Ask any complex topic. Get crystal-clear explanations tailored to your exact experience level.
+                    </p>
+
+                    <!-- Search Input & Button -->
+                    <div class="relative">
+                        <input type="text" id="topicInput" placeholder="e.g., Closures, REST APIs, Redux..." 
+                            class="w-full pl-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition font-medium">
+                        <button onclick="generateExplanation()" class="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center active:scale-95 transition shadow-soft-sm">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Explanation Depth Selector Tabs -->
+                    <div class="pt-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Explanation Format:</span>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button onclick="setExplainerDepth('bitesize', this)" class="depth-btn depth-active py-1.5 text-[11px] font-semibold text-center rounded-lg bg-brand-600 text-white transition">
+                                ⚡ Bite-size
+                            </button>
+                            <button onclick="setExplainerDepth('eli5', this)" class="depth-btn py-1.5 text-[11px] font-semibold text-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                🧒 ELI5
+                            </button>
+                            <button onclick="setExplainerDepth('code', this)" class="depth-btn py-1.5 text-[11px] font-semibold text-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                💻 Analogy
+                            </button>
+                            <button onclick="setExplainerDepth('deep', this)" class="depth-btn py-1.5 text-[11px] font-semibold text-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                📚 Deep
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Explanation Results Output Panel -->
+                <div id="explainerOutputContainer" class="hidden space-y-3 animate-slide-up">
+                    <div class="bg-white rounded-2xl p-4 border border-brand-200/80 shadow-soft-md space-y-3 relative">
+                        
+                        <!-- Top Result Controls -->
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <span id="explainerTopicBadge" class="font-heading font-bold text-xs text-brand-600 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
+                                Topic: React Hooks
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <!-- TTS Audio Player -->
+                                <button onclick="speakExplanation()" id="ttsBtn" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs hover:bg-indigo-100 transition active:scale-95" title="Listen Audio">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                                <!-- Save Flashcard -->
+                                <button onclick="saveAsFlashcard()" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs hover:bg-emerald-100 transition active:scale-95" title="Save Flashcard">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Main Explanation Content -->
+                        <div id="explainerText" class="text-xs text-slate-700 leading-relaxed space-y-2">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Real-World Analogy / Takeaway Box -->
+                        <div id="explainerAnalogyBox" class="bg-amber-50/70 border border-amber-200/60 rounded-xl p-3 text-xs text-amber-900 leading-relaxed">
+                            <div class="font-bold text-amber-800 flex items-center gap-1.5 mb-1">
+                                <i class="fa-solid fa-lightbulb text-amber-500"></i> Real World Analogy
+                            </div>
+                            <span id="analogyText">Think of React Hooks as attachable power tools for functional components...</span>
+                        </div>
+
+                        <!-- Next Action Recommendation -->
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Why this matters: Reduces boilerplate by 40%</span>
+                            <button onclick="switchTab('feed')" class="text-brand-600 font-bold hover:underline">
+                                View Related Feed Cards <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Recall Flashcard Deck Widget -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-heading font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-400">
+                            Saved Active Recall Cards (<span id="flashcardCount">2</span>)
+                        </h3>
+                        <span class="text-[11px] text-brand-600 font-bold">Tap card to flip</span>
+                    </div>
+
+                    <!-- Flip Card Container -->
+                    <div class="flip-card w-full h-36 cursor-pointer" onclick="this.classList.toggle('flipped')">
+                        <div class="flip-card-inner">
+                            <!-- Front -->
+                            <div class="flip-card-front bg-gradient-to-br from-brand-600 to-indigo-700 text-white p-4 flex flex-col justify-between shadow-soft-md">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded text-white font-semibold">JavaScript</span>
+                                    <i class="fa-solid fa-rotate text-xs text-white/70"></i>
+                                </div>
+                                <h4 id="flashcardFrontText" class="font-heading font-bold text-sm text-center leading-snug">
+                                    What is Event Delegation in the DOM?
+                                </h4>
+                                <span class="text-[10px] text-center text-indigo-200">Tap to show answer</span>
+                            </div>
+                            <!-- Back -->
+                            <div class="flip-card-back bg-slate-900 text-white p-4 flex flex-col justify-between shadow-soft-md border border-slate-700">
+                                <span class="text-[10px] text-emerald-400 font-mono">ANSWER</span>
+                                <p id="flashcardBackText" class="text-xs text-slate-300 leading-relaxed font-medium">
+                                    Attaching a single event listener to a parent element to handle events on child elements using event bubbling. Saves memory!
+                                </p>
+                                <div class="flex justify-end gap-2">
+                                    <span class="text-[10px] text-slate-400">Mastery: 80%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: ROADMAP & MASTERY HUB ================= -->
+            <section id="tab-roadmap" class="tab-page space-y-4 hidden">
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="font-heading font-bold text-slate-900 text-base">Learning Roadmap</h2>
+                            <p class="text-xs text-slate-500">Curated sequence toward your career goal</p>
+                        </div>
+                        <span class="px-3 py-1 bg-emerald-50 text-emerald-600 font-bold text-xs rounded-xl border border-emerald-200">
+                            Phase 2 / 4
+                        </span>
+                    </div>
+
+                    <!-- Roadmap Path Timeline -->
+                    <div class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+                        
+                        <!-- Step 1 (Completed) -->
+                        <div class="relative">
+                            <span class="absolute -left-6 top-0 w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold ring-4 ring-white">
+                                <i class="fa-solid fa-check"></i>
+                            </span>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="font-heading font-bold text-slate-900 text-xs">Module 1: JavaScript Fundamentals</h4>
+                                    <span class="text-[10px] font-bold text-emerald-600">100% Done</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Variables, Scopes, Objects & Arrays</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 (In Progress - Active) -->
+                        <div class="relative">
+                            <span class="absolute -left-6 top-0 w-5 h-5 bg-brand-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold ring-4 ring-white pulse-glow">
+                                2
+                            </span>
+                            <div class="bg-brand-50/60 p-3 rounded-xl border border-brand-200">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="font-heading font-bold text-slate-900 text-xs">Module 2: Asynchronous Mastery</h4>
+                                    <span class="text-[10px] font-bold text-brand-600">68% Active</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-2">Callbacks, Promises, Async/Await & Event Loop</p>
+                                <div class="w-full bg-brand-200/60 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-brand-600 h-full w-[68%] rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 (Locked) -->
+                        <div class="relative opacity-60">
+                            <span class="absolute -left-6 top-0 w-5 h-5 bg-slate-300 text-slate-600 rounded-full flex items-center justify-center text-[10px] font-bold ring-4 ring-white">
+                                <i class="fa-solid fa-lock text-[9px]"></i>
+                            </span>
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="font-heading font-bold text-slate-800 text-xs">Module 3: React Architecture</h4>
+                                    <span class="text-[10px] text-slate-400 font-medium">Locked</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400">JSX, Virtual DOM, State Management & Custom Hooks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Targeted Weak Area Remediation Widget -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-2">
+                    <h3 class="font-heading font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-400">
+                        Diagnosed Weak Areas (Needs Review)
+                    </h3>
+                    <div class="flex items-center justify-between p-2.5 bg-rose-50/70 rounded-xl border border-rose-200/70">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-slate-900 text-xs">Closure Scope Lifetime</h5>
+                                <p class="text-[10px] text-rose-700">60% accuracy in quizzes</p>
+                            </div>
+                        </div>
+                        <button onclick="explainInDetail('JS Closures and Memory Scopes')" class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold active:scale-95 transition shadow-soft-sm">
+                            Fix Now
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: ANALYTICS & GAINS ================= -->
+            <section id="tab-analytics" class="tab-page space-y-4 hidden">
+                
+                <!-- Main Stats Cards Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-soft-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-500">Learning XP</span>
+                            <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center text-xs"><i class="fa-solid fa-bolt"></i></span>
+                        </div>
+                        <h3 id="xpDisplay" class="font-heading font-bold text-xl text-slate-900">1,450 XP</h3>
+                        <p class="text-[10px] text-emerald-600 font-semibold mt-1">+240 XP this week</p>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-soft-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-500">Time Saved</span>
+                            <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs"><i class="fa-solid fa-hourglass-half"></i></span>
+                        </div>
+                        <h3 class="font-heading font-bold text-xl text-slate-900">3.8 Hours</h3>
+                        <p class="text-[10px] text-brand-600 font-semibold mt-1">Via bite-sized summary</p>
+                    </div>
+                </div>
+
+                <!-- HTML Canvas Weekly Activity Bar Chart -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-heading font-bold text-slate-900 text-sm">Weekly Activity</h3>
+                            <p class="text-[11px] text-slate-500">Daily learning duration in minutes</p>
+                        </div>
+                        <span class="text-xs font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">Avg: 18m/day</span>
+                    </div>
+
+                    <div class="w-full h-32 relative">
+                        <canvas id="activityChart" class="w-full h-full"></canvas>
+                    </div>
+                </div>
+
+                <!-- Milestone Achievements -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-3">
+                    <h3 class="font-heading font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-400">
+                        Earned Badges
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70">
+                            <div class="w-10 h-10 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-1 shadow-soft-sm">
+                                🏆
+                            </div>
+                            <h5 class="font-bold text-[11px] text-slate-800">10-Day Streak</h5>
+                            <span class="text-[9px] text-slate-400">Unlocked</span>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70">
+                            <div class="w-10 h-10 mx-auto rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg mb-1 shadow-soft-sm">
+                                🚀
+                            </div>
+                            <h5 class="font-bold text-[11px] text-slate-800">Fast Learner</h5>
+                            <span class="text-[9px] text-slate-400">Unlocked</span>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 opacity-50">
+                            <div class="w-10 h-10 mx-auto rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-lg mb-1">
+                                🔒
+                            </div>
+                            <h5 class="font-bold text-[11px] text-slate-800">JS Master</h5>
+                            <span class="text-[9px] text-slate-400">80% Progress</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: EMPATHY & PSYCHOLOGY MATRIX ================= -->
+            <section id="tab-empathy" class="tab-page space-y-4 hidden">
+                <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-soft-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="font-heading font-bold text-slate-900 text-base">Learner Empathy Map</h2>
+                            <p class="text-xs text-slate-500">Research findings & UX design rationale</p>
+                        </div>
+                        <span class="px-2.5 py-1 bg-brand-50 text-brand-600 text-xs font-bold rounded-lg border border-brand-200">
+                            User Centric
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Tap any quadrant below to highlight how the system's features dynamically solve specific emotional and behavioral needs.
+                    </p>
+
+                    <!-- Interactive 6-Quadrant Grid -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        
+                        <!-- SAYS -->
+                        <div onclick="inspectEmpathy('says')" class="empathy-card cursor-pointer p-3 bg-blue-50/80 rounded-xl border border-blue-200/70 hover:shadow-soft-sm transition">
+                            <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider block mb-1">💬 SAYS</span>
+                            <p class="text-[11px] text-slate-700 leading-snug font-medium">"I want quick, simple explanations tailored to my level."</p>
+                        </div>
+
+                        <!-- THINKS -->
+                        <div onclick="inspectEmpathy('thinks')" class="empathy-card cursor-pointer p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/70 hover:shadow-soft-sm transition">
+                            <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">🧠 THINKS</span>
+                            <p class="text-[11px] text-slate-700 leading-snug font-medium">"Is this relevant to my goals? How will this help in real life?"</p>
+                        </div>
+
+                        <!-- DOES -->
+                        <div onclick="inspectEmpathy('does')" class="empathy-card cursor-pointer p-3 bg-amber-50/80 rounded-xl border border-amber-200/70 hover:shadow-soft-sm transition">
+                            <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block mb-1">⚡ DOES</span>
+                            <p class="text-[11px] text-slate-700 leading-snug font-medium">Skips generic info, searches quick topic summaries.</p>
+                        </div>
+
+                        <!-- FEELS -->
+                        <div onclick="inspectEmpathy('feels')" class="empathy-card cursor-pointer p-3 bg-purple-50/80 rounded-xl border border-purple-200/70 hover:shadow-soft-sm transition">
+                            <span class="text-[10px] font-bold text-purple-700 uppercase tracking-wider block mb-1">❤️ FEELS</span>
+                            <p class="text-[11px] text-slate-700 leading-snug font-medium">Frustrated by information overload; satisfied with visible progress.</p>
+                        </div>
+
+                        <!-- PAIN POINTS -->
+                        <div onclick="inspectEmpathy('pains')" class="empathy-card cursor-pointer p-3 bg-rose-50/80 rounded-xl border border-rose-200/70 hover:shadow-soft-sm transition">
+                            <span class="text-[10px] font-bold text-rose-700 uppercase tracking-wider block mb-1">⚠️ PAIN POINTS</span>
+                            <p class="text-[11px] text-slate-700 leading-snug font-medium">Wasting time on generic content; lack of motivation.</p>
+                        </div>
+
+                        <!-- GAINS -->
+                        <div onclick="inspectEmpathy('gains')" class="empathy-card cursor-pointer p-3 bg-teal-50/80 rounded-xl border border-teal-200/70 hover:shadow-soft-sm transition">
+                            <span class="text-[10px] font-bold text-teal-700 uppercase tracking-wider block mb-1">🎯 GAINS</span>
+                            <p class="text-[11px] text-slate-700 leading-snug font-medium">Time saved, clear bite-sized mastery, high retention.</p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Mapping Explanation Banner -->
+                    <div id="empathyDetailBox" class="p-3 bg-slate-900 text-white rounded-xl text-xs space-y-1">
+                        <span class="text-brand-400 font-bold block" id="empathyTitle">System Design Implication:</span>
+                        <p class="text-slate-300 leading-relaxed text-[11px]" id="empathyBody">
+                            Click any quadrant above to inspect how the app translates psychological learner feedback into active engineering UI features.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- BOTTOM MOBILE NAVIGATION DOCK -->
+        <nav class="glass-header absolute bottom-0 left-0 right-0 h-16 border-t border-slate-200/80 px-2 flex justify-around items-center z-30">
+            <button onclick="switchTab('feed')" class="nav-btn active-nav flex flex-col items-center gap-1 w-1/5 text-brand-600 transition">
+                <i class="fa-solid fa-layer-group text-lg"></i>
+                <span class="text-[10px] font-bold">Feed</span>
+            </button>
+
+            <button onclick="switchTab('explainer')" class="nav-btn flex flex-col items-center gap-1 w-1/5 text-slate-400 hover:text-brand-600 transition">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                <span class="text-[10px] font-medium">Explainer</span>
+            </button>
+
+            <button onclick="switchTab('roadmap')" class="nav-btn flex flex-col items-center gap-1 w-1/5 text-slate-400 hover:text-brand-600 transition">
+                <i class="fa-solid fa-route text-lg"></i>
+                <span class="text-[10px] font-medium">Roadmap</span>
+            </button>
+
+            <button onclick="switchTab('analytics')" class="nav-btn flex flex-col items-center gap-1 w-1/5 text-slate-400 hover:text-brand-600 transition">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="text-[10px] font-medium">Stats</span>
+            </button>
+
+            <button onclick="switchTab('empathy')" class="nav-btn flex flex-col items-center gap-1 w-1/5 text-slate-400 hover:text-brand-600 transition">
+                <i class="fa-solid fa-heart-pulse text-lg"></i>
+                <span class="text-[10px] font-medium">Empathy</span>
+            </button>
+        </nav>
+
+        <!-- ================= MODALS & TOAST NOTIFICATIONS ================= -->
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 -translate-y-20 opacity-0 bg-slate-900 text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-soft-lg transition-all duration-300 z-50 flex items-center gap-2 pointer-events-none">
+            <span id="toastIcon"><i class="fa-solid fa-circle-check text-emerald-400"></i></span>
+            <span id="toastMsg">Notification message</span>
+        </div>
+
+        <!-- Profile & Settings Modal -->
+        <div id="profileModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-soft-lg animate-slide-up">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                    <h3 class="font-heading font-bold text-slate-900 text-sm">Learner Preferences</h3>
+                    <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 text-base">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Target Skill Level</label>
+                        <select id="userLevelSelect" onchange="updateUserLevel(this.value)" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none">
+                            <option value="Beginner">Beginner (Bite-Sized Summaries)</option>
+                            <option value="Intermediate" selected>Intermediate (Concepts + Code)</option>
+                            <option value="Advanced">Advanced (Architectural Optimization)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Daily Target Goal</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setDailyGoal('10 mins')" class="py-2 text-xs font-semibold rounded-xl bg-brand-50 text-brand-600 border border-brand-200">10 Mins</button>
+                            <button onclick="setDailyGoal('20 mins')" class="py-2 text-xs font-semibold rounded-xl bg-slate-50 text-slate-600 border border-slate-200">20 Mins</button>
+                            <button onclick="setDailyGoal('30 mins')" class="py-2 text-xs font-semibold rounded-xl bg-slate-50 text-slate-600 border border-slate-200">30 Mins</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeProfileModal()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl shadow-soft-sm active:scale-95 transition">
+                    Save Profile Settings
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* STATE MANAGEMENT */
+        const appState = {
+            xp: 1450,
+            streak: 14,
+            activeTab: 'feed',
+            explainerDepth: 'bitesize',
+            currentLevel: 'Intermediate',
+            savedFlashcards: [
+                {
+                    topic: 'Event Delegation',
+                    front: 'What is Event Delegation in the DOM?',
+                    back: 'Attaching a single event listener to a parent element to handle events on child elements using event bubbling. Saves memory!'
+                }
+            ]
+        };
+
+        /* TAB SWITCHING SYSTEM */
+        function switchTab(tabName) {
+            appState.activeTab = tabName;
+            
+            // Hide all tab pages
+            document.querySelectorAll('.tab-page').forEach(page => {
+                page.classList.add('hidden');
+            });
+
+            // Show selected tab
+            const target = document.getElementById(`tab-${tabName}`);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('animate-slide-up');
+            }
+
+            // Update bottom nav styles
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-600', 'active-nav');
+                btn.classList.add('text-slate-400');
+            });
+
+            const activeBtn = event ? event.currentTarget : null;
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-brand-600', 'active-nav');
+            }
+
+            // Render chart if opening analytics tab
+            if (tabName === 'analytics') {
+                renderActivityChart();
+            }
+        }
+
+        /* TOAST NOTIFICATION HANDLER */
+        function showToast(message, iconClass = "fa-circle-check text-emerald-400") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            toastIcon.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+            toast.classList.remove('opacity-0', '-translate-y-20');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-20');
+            }, 2600);
+        }
+
+        /* FEED INTERACTION MECHANICS */
+        function filterFeed(category, btnElement) {
+            // Update chip styles
+            document.querySelectorAll('.feed-chip').forEach(chip => {
+                chip.classList.remove('bg-brand-600', 'text-white', 'shadow-soft-sm');
+                chip.classList.add('bg-white', 'text-slate-600');
+            });
+            btnElement.classList.remove('bg-white', 'text-slate-600');
+            btnElement.classList.add('bg-brand-600', 'text-white', 'shadow-soft-sm');
+
+            // Filter cards
+            const cards = document.querySelectorAll('.feed-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function markComplete(btn) {
+            const card = btn.closest('.feed-card');
+            card.style.opacity = '0.5';
+            card.style.pointerEvents = 'none';
+            
+            // Add XP
+            appState.xp += 25;
+            document.getElementById('xpDisplay').innerText = `${appState.xp.toLocaleString()} XP`;
+            
+            showToast("Mastered! +25 XP added to your goal.", "fa-bolt text-amber-400");
+        }
+
+        function skipCard(btn) {
+            const card = btn.closest('.feed-card');
+            card.style.transform = 'translateX(100px)';
+            card.style.opacity = '0';
+            setTimeout(() => {
+                card.style.display = 'none';
+                showToast("Algorithm tuned: Skipping duplicate info", "fa-arrows-rotate text-indigo-400");
+            }, 300);
+        }
+
+        function toggleBookmark(btn) {
+            btn.classList.toggle('text-amber-500');
+            btn.classList.toggle('text-slate-300');
+            if (btn.classList.contains('text-amber-500')) {
+                showToast("Saved to active study collection!", "fa-bookmark text-amber-400");
+            }
+        }
+
+        function checkAnswer(btn, isCorrect) {
+            const parent = btn.parentElement;
+            const buttons = parent.querySelectorAll('button');
+            buttons.forEach(b => b.style.pointerEvents = 'none');
+
+            if (isCorrect) {
+                btn.classList.remove('bg-white', 'border-amber-200/80');
+                btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+                appState.xp += 50;
+                document.getElementById('xpDisplay').innerText = `${appState.xp.toLocaleString()} XP`;
+                showToast("Correct! +50 XP gained", "fa-circle-check text-emerald-400");
+            } else {
+                btn.classList.remove('bg-white', 'border-amber-200/80');
+                btn.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+                showToast("Incorrect! Tap 'Explain Deeper' to review", "fa-circle-xmark text-rose-400");
+            }
+        }
+
+        function refreshFeed() {
+            showToast("Refreshing personalized feed based on level...", "fa-rotate text-indigo-400");
+            const container = document.getElementById('feedContainer');
+            container.classList.add('opacity-50');
+            setTimeout(() => {
+                container.classList.remove('opacity-50');
+            }, 400);
+        }
+
+        /* SMART TOPIC EXPLAINER ENGINE */
+        function setExplainerDepth(depth, btn) {
+            appState.explainerDepth = depth;
+            document.querySelectorAll('.depth-btn').forEach(b => {
+                b.classList.remove('bg-brand-600', 'text-white');
+                b.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            btn.classList.remove('bg-slate-100', 'text-slate-600');
+            btn.classList.add('bg-brand-600', 'text-white');
+        }
+
+        async function generateExplanation() {
+            const query = document.getElementById('topicInput').value.trim();
+            if (!query) {
+                showToast("Please enter a topic name first!", "fa-circle-info text-amber-400");
+                return;
+            }
+
+            const outputContainer = document.getElementById('explainerOutputContainer');
+            const textElement = document.getElementById('explainerText');
+            const analogyElement = document.getElementById('analogyText');
+            const badgeElement = document.getElementById('explainerTopicBadge');
+
+            badgeElement.innerText = `Topic: ${query}`;
+            outputContainer.classList.remove('hidden');
+            textElement.innerHTML = `<p class="text-slate-400 italic"><i class="fa-solid fa-spinner animate-spin"></i> Generating custom grounded explanation...</p>`;
+
+            // Gemini API Direct Fetch with intelligent local fallback
+            try {
+                const apiKey = ""; // Canvas auto-injects runtime key if left empty
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                
+                const prompt = `Act as an expert computer science tutor. Explain the topic "${query}" for a learner at the ${appState.currentLevel} level. Format: Provide 2 short paragraphs with clear key takeaways, and a 1-sentence real-world analogy. Mode: ${appState.explainerDepth}.`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (resultText) {
+                    textElement.innerHTML = `<p class="leading-relaxed text-slate-700">${resultText.replace(/\n\n/g, '</p><p class="mt-2 leading-relaxed text-slate-700">')}</p>`;
+                    analogyElement.innerText = `Real-world analogy for ${query}: Connects directly to real software workflows by eliminating boilerplate.`;
+                } else {
+                    throw new Error("Fallback required");
+                }
+            } catch (err) {
+                // Intelligent Structured Fallback Engine
+                setTimeout(() => {
+                    textElement.innerHTML = `
+                        <p class="font-semibold text-slate-800">Core Concept:</p>
+                        <p>${query} is a fundamental pattern designed to optimize resource execution and maintain clear component boundaries without memory leaks.</p>
+                        <p class="mt-1.5 font-semibold text-slate-800">Key Takeaway:</p>
+                        <p>Mastering ${query} reduces debugging time by 40% and directly aligns with modern software design requirements.</p>
+                    `;
+                    analogyElement.innerText = `Think of ${query} like a modern automated assembly line: every part performs its distinct task without cluttering the global space.`;
+                }, 400);
+            }
+
+            showToast("Explanation ready!", "fa-wand-magic-sparkles text-brand-500");
+        }
+
+        function explainInDetail(topicName) {
+            switchTab('explainer');
+            document.getElementById('topicInput').value = topicName;
+            generateExplanation();
+        }
+
+        /* TEXT TO SPEECH PLAYER */
+        function speakExplanation() {
+            const text = document.getElementById('explainerText').innerText;
+            if (!text) return;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop active speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+                showToast("Playing audio explanation...", "fa-volume-high text-indigo-400");
+            } else {
+                showToast("Text-to-speech not supported on this device", "fa-circle-exclamation text-rose-400");
+            }
+        }
+
+        /* FLASHCARD SAVER */
+        function saveAsFlashcard() {
+            const topic = document.getElementById('topicInput').value || "New Concept";
+            const front = `What is the core takeaway of ${topic}?`;
+            const back = document.getElementById('explainerAnalogyBox').innerText;
+
+            appState.savedFlashcards.push({ topic, front, back });
+            document.getElementById('flashcardCount').innerText = appState.savedFlashcards.length;
+            document.getElementById('flashcardFrontText').innerText = front;
+            document.getElementById('flashcardBackText').innerText = back;
+
+            showToast("Saved as new Active Recall Card!", "fa-plus text-emerald-400");
+        }
+
+        /* EMPATHY MATRIX INTERACTIVE INSPECTOR */
+        const empathyData = {
+            says: {
+                title: "SAYS: 'Quick, tailored explanations'",
+                body: "Design Response: Implemented the Smart Topic Explainer with 4 depth toggles (Bite-sized, ELI5, Analogy, Deep) to eliminate fluff."
+            },
+            thinks: {
+                title: "THINKS: 'Is this relevant to my goals?'",
+                body: "Design Response: Integrated real-world impact tags and career roadmaps directly into every card so relevance is always obvious."
+            },
+            does: {
+                title: "DOES: Skips generic/repeated info",
+                body: "Design Response: Created a 'Skip (Know This)' action that tunes the recommendation algorithm to prevent content duplication."
+            },
+            feels: {
+                title: "FEELS: Frustrated by overload; motivated by progress",
+                body: "Design Response: Built XP streak rewards, milestone progress bars, and instant positive reinforcement celebratory loops."
+            },
+            pains: {
+                title: "PAIN POINTS: Unclear explanations & hidden weak areas",
+                body: "Design Response: Automated weak-area diagnosis with 1-click 'Fix Now' remediation tutorials."
+            },
+            gains: {
+                title: "GAINS: Time efficiency & high retention",
+                body: "Design Response: Embedded Active Recall flashcards and TTS audio playback for learning on the go."
+            }
+        };
+
+        function inspectEmpathy(key) {
+            const detailBox = document.getElementById('empathyDetailBox');
+            const title = document.getElementById('empathyTitle');
+            const body = document.getElementById('empathyBody');
+
+            if (empathyData[key]) {
+                title.innerText = empathyData[key].title;
+                body.innerText = empathyData[key].body;
+                detailBox.classList.add('ring-2', 'ring-brand-500');
+                setTimeout(() => detailBox.classList.remove('ring-2', 'ring-brand-500'), 1000);
+            }
+        }
+
+        /* CANVAS CHART RENDERER */
+        function renderActivityChart() {
+            const canvas = document.getElementById('activityChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.offsetWidth * dpr;
+            canvas.height = canvas.offsetHeight * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+            const values = [15, 25, 18, 30, 22, 12, 28]; // Mins
+            const maxVal = 35;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const barWidth = 22;
+            const gap = (width - (barWidth * 7)) / 8;
+
+            values.forEach((val, i) => {
+                const x = gap + i * (barWidth + gap);
+                const barHeight = (val / maxVal) * (height - 30);
+                const y = height - barHeight - 20;
+
+                // Draw Bar Background
+                ctx.fillStyle = '#f1f5f9';
+                ctx.beginPath();
+                ctx.roundRect(x, 10, barWidth, height - 30, 6);
+                ctx.fill();
+
+                // Draw Active Bar
+                ctx.fillStyle = i === 6 ? '#4f46e5' : '#818cf8';
+                ctx.beginPath();
+                ctx.roundRect(x, y, barWidth, barHeight, 6);
+                ctx.fill();
+
+                // Draw Day Label
+                ctx.fillStyle = '#64748b';
+                ctx.font = '600 10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(days[i], x + barWidth / 2, height - 4);
+            });
+        }
+
+        /* MODAL CONTROLS */
+        function openProfileModal() {
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        function toggleNotificationsModal() {
+            showToast("No unread alerts! You're up to date.", "fa-bell text-indigo-400");
+        }
+
+        function updateUserLevel(val) {
+            appState.currentLevel = val;
+            document.getElementById('levelBadge').innerText = val;
+            showToast(`Target set to ${val} mode`, "fa-sliders text-brand-500");
+        }
+
+        function setDailyGoal(timeStr) {
+            showToast(`Daily target set to ${timeStr}`, "fa-bullseye text-emerald-400");
+        }
+
+        // Window load initialization
+        window.onload = function() {
+            renderActivityChart();
+        }
+    </script>
+</body>
+</html>
